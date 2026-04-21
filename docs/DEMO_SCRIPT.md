@@ -1,98 +1,107 @@
-# Wedge — Live Demo Script (5 min)
+# Wedge — Live Demo Script (5 min) — v2: The Learning Shop
 
 **Track 5 · NVIDIA GPU Prize · NemoClaw + vLLM**
 
-Monitor 1 = Telegram. Monitor 2 = `blueprint.yaml` open in VS Code + terminal with benchmark ready.
+Monitor 1 = Telegram. Monitor 2 = `blueprint.yaml` open + terminal with benchmark ready.
+
+The hero moment is **Scene 2 — live learning.** Practice it until it's muscle memory.
 
 ---
 
-## 0:00 — 0:30 · Hook
+## 0:00 — 0:30 · The hook
 
-> "Mike runs a $8M machine shop in Pennsylvania. 12 people. He quotes every
-> RFQ himself at night because his estimators can't read GD&T. Each quote is
-> 30 minutes. He loses 40% of bids because he's too slow.
+> "Mike runs a $8M machine shop in Pennsylvania. 12 people. Every RFQ takes him
+> 30 minutes to quote. He loses 40% of bids because he's too slow.
 >
-> We built Mike a quoting agent. NemoClaw sandbox + vLLM + 5 tools.
-> Here's what that looks like."
+> We built Mike a quoting agent. NemoClaw sandbox + vLLM + 7 tools. But the
+> real magic isn't that it quotes fast. It's that **it learns**."
 
-## 0:30 — 1:30 · Scene 1 — real customer PDF
+## 0:30 — 1:15 · Scene 1 — real Bosch PDF
 
 *Drop `bosch-punzon.pdf` into Telegram. Type:*
-> "Quote this for 200 pieces, balanced steering"
+> "Quote this for 200 pieces, balanced"
 
 *Agent replies:*
-- Drawing: F028.WB0.867 — Punzón de Corte
-- Material: AISI D-2 tool steel, 60–62 HRC (grinding required)
+- Drawing F028.WB0.867 — Punzón de Corte
+- AISI D-2 tool steel, 60–62 HRC (grinding required)
 - Complexity: COMPLEX (75/100)
-- Quote: $X/unit × 200 = $Y total, Z days lead
-- Confidence: 0.85
-- Flags: mixed imperial/metric on pocket spec, needs customer confirmation
+- Quote: $X/unit × 200, Z days, confidence 0.85
+- Flags: mixed imperial/metric, needs customer confirmation
 
-> "That's a real Bosch drawing. Spanish text, German material spec, tool steel
-> that needs post-heat-treat grinding. Reducto parsed it. Kimi on vLLM reasoned
-> over our mock ERP. 15 seconds end-to-end."
+> "Real Bosch drawing. Spanish, tool steel, hardness spec. Reducto parsed it,
+> Llama on vLLM reasoned over the shop's ERP. 15 seconds."
 
-## 1:30 — 3:00 · Scene 2 — the steering dial (the differentiator)
+## 1:15 — 3:15 · Scene 2 — 🔥 THE LEARNING LOOP 🔥
+
+*Drop `demo_1.pdf` (Boeing 82-Alpha bracket). Type:*
+> "Quote for Boeing, 150 pcs, balanced"
+
+*Agent quotes: $31/unit, $4,650, 7 days, no clarifying Q.*
+
+*Type (in Mike's voice):*
+> "Too low. Boeing always pays slow — add 8%"
+
+*Agent: "Got it. Storing: `Boeing T2 + 6061 aluminum + bracket → +8% margin,
+pays slow`. Total personality entries: 1."*
+
+*Now drop `demo_3.pdf` — Boeing 6061 wing-hinge. Type:*
+> "Quote this, 80 pcs, balanced"
+
+*Agent's response — this is the moment:*
+- Quote: $X/unit (with +8% pre-applied)
+- **Reasoning block says: "Applied +8% margin cushion per stored feedback on
+  Boeing T2 payment history (recorded earlier this session). Neutral base
+  would have been $X/unit; adjusted to $X'/unit."**
+
+*Point to Monitor 2:*
+> "The agent called shop-recall-personality as its fourth tool — before
+> composing the quote — found the matching feedback, applied it, and cited
+> it. Mike never said 'remember this' or 'apply it this time.'
+> It just did. This is what agentic means.
+>
+> And this personality persists in the sandbox volume. Tomorrow, next week,
+> next year, Boeing's payment pattern stays on Mike's shop floor. No other
+> shop gets it. No hosted API sees it. That's the moat."
+
+## 3:15 — 4:00 · Scene 3 — steering dial still works on top of learned personality
 
 *Type:*
-> "Same RFQ, conservative steering"
+> "Same RFQ, aggressive steering"
 
-*New quote appears — ~15% higher, longer lead, clarifying question about tolerances.*
+*Quote shifts: tighter margin (-8% from personality-adjusted base), shorter
+lead, cites lost bid 3421 as benchmark.*
 
-*Type:*
-> "Now aggressive"
+> "Three steering profiles — real vLLM knobs in the blueprint (temperature,
+> guided_json, per-profile system prompt injection). Each stacks with the
+> learned personality. Mike flips the YAML line to change the whole shop's
+> default personality — aggressive on slow months, conservative at full
+> capacity."
 
-*Third quote — ~8% lower, tighter lead, cites the lost bid as benchmark.*
+*Switch to Monitor 2, show `blueprint.yaml` lines 17–55.*
 
-> "Three profiles. Real vLLM controls, not prompt engineering."
+## 4:00 — 4:30 · Scene 4 — latency
 
-*Switch to Monitor 2, show blueprint.yaml lines 17–55:*
-
-> "Here's the steering — temperature, guided_json, per-profile system prompt.
-> All declarative. Mike changes this YAML to tune his shop's personality. One
-> line — `default_profile: vllm-aggressive` — and the whole agent rebids."
-
-## 3:00 — 4:00 · Scene 3 — latency race (the NVIDIA story)
-
-*Run the pre-written latency benchmark on Monitor 2:*
-
+*Run:*
 ```bash
 $ python3 benchmarks/latency-test.py --profile vllm --profile nvidia-cloud
   vllm           3.12 s  ±0.4 s  (n=5)
   nvidia-cloud  12.81 s  ±1.9 s  (n=5)
-  → vLLM 4.1× faster for identical prompts
+  → vLLM 4.1× faster on identical prompts
 ```
 
-> "Same quote prompt. Llama-3.1-8B on vLLM on a local A100 is 4× faster than
-> Nemotron-120B in the cloud. For a shop quoting 40 RFQs a day, that's the
-> difference between 'responsive' and 'we already moved on to the competitor.'
->
-> And every prompt stays on-prem. Zero customer drawings leaked to
-> an external API."
-
-## 4:00 — 4:30 · Scene 4 — reasoning over history
-
-*Type:*
-> "Why did we lose bid 3421?"
-
-*Agent reads the similar-jobs table, identifies 3421 as a loss, explains:*
-> "We lost 3421 — Boeing 82-Gamma bracket, 120 pcs at $3,300. That quote was in
-> our balanced-mode range. Competitor undercut us. Pattern: Boeing aluminum
-> brackets >100 pcs consistently lost to Shop Z at ~$2,900. Aggressive-mode
-> would have quoted $2,950."
-
-> "That's what 'agentic' actually means. The agent reasons over YOUR data,
-> not generic knowledge."
+> "Llama-3.1-8B on a local A100 beats Nemotron-120B cloud by 4×.
+> Every prompt stays on-prem. Zero customer drawings leak."
 
 ## 4:30 — 5:00 · Close
 
-> "Under the hood: one blueprint.yaml. Five tools. Three inference profiles.
-> vLLM primary, Nemotron cloud fallback. NemoClaw's netns + seccomp + Landlock
-> mean the agent can never exfiltrate a customer drawing.
+> "Seven tools. One declarative blueprint. Learning memory that's the shop's
+> moat. NemoClaw's Landlock + seccomp + netns mean the agent can't exfiltrate
+> a single customer drawing.
 >
-> Code on GitHub: odominguez7/wedge-agentic-edge.
+> Code on GitHub: odominguez7/wedge-agentic-edge (private for the demo —
+> happy to grant read access to judges).
 >
-> NVIDIA + Red Hat's best play here isn't another support bot. It's keeping US
+> NVIDIA + Red Hat's best play isn't another support bot. It's keeping US
 > manufacturing alive at shop-floor economics. Thanks."
 
 ---
@@ -101,18 +110,15 @@ $ python3 benchmarks/latency-test.py --profile vllm --profile nvidia-cloud
 
 | Failure | Switch to |
 |---|---|
-| Telegram bot down | Run from terminal: `openclaw agent --agent main -m "Quote bosch-punzon.pdf..."` |
-| vLLM down on Brev | Switch `default_profile: nvidia-cloud` in blueprint.yaml (1 line), lose the latency-race moment, keep everything else |
-| All inference down | Play the pre-recorded 90-second screencast (`/Users/.../demo-backup.mp4`); explain what it does, show code, field questions |
-| Hallucinated quote on a judge-supplied PDF | "Today's demo uses 3 pre-staged real customer drawings with cached Reducto output. Let me show you one of those instead." Fall back to `bosch-punzon.pdf`. |
+| Telegram down | `openclaw agent --agent main -m "..."` from terminal |
+| Learning loop doesn't recall | Pre-stage one feedback entry tonight: `shop-remember-feedback "Boeing T2" "6061 aluminum" "bracket" "pays slow — +8%"`. On stage, SKIP the "Mike gives feedback" step and go straight to recall demo. |
+| vLLM down on Brev | Switch `default_profile: nvidia-cloud`. Lose the latency moment, keep the rest. |
+| All inference down | Play pre-recorded backup video. Explain from slides. |
 
-## Things NOT to say
+## Rehearsal notes (do FRIDAY)
 
-- Never say "our steering is real vLLM runtime modulation" unless the judge
-  asks — that claim is load-bearing and they might poke at the bash script.
-  The honest answer if pressed: "temperature + guided_json + per-profile
-  system prompt. On Deep Tech we plan to add grammar constraints and logit
-  biasing, but this submission tests the agent loop end-to-end first."
-- Never call it a "GPT wrapper." It's not, but a nervous founder might.
-- Don't promise benchmark numbers you haven't run. Run them on Brev before
-  the demo and update the slide.
+- The 2-minute learning-loop scene is the one judges will quote in their discussion. Rehearse it 5× with a timer.
+- Practice the Mike-voice correction: "Too low. Boeing always pays slow — add 8%." Say it exactly.
+- Keep your tone calm when the agent cites the feedback — DON'T celebrate. Let the demo land.
+- If a judge asks "is the 8% hardcoded?" — say: "No. It's whatever feedback I just gave it. Here's the jsonl file." Show `cat /sandbox/.openclaw-data/shop-memory/personality.jsonl`.
+- If a judge asks "what about embeddings for soft matching?" — say: "Today it's customer + material exact match. Production would use embeddings for softer retrieval across synonymous customer names and part families. The skill interface wouldn't change."

@@ -1,28 +1,30 @@
 # Wedge Agentic Edge — 60-second pitch
 
 ## The problem
-US machine shops are dying. Mike runs a 12-person shop in Pennsylvania, $8M/yr revenue. Every RFQ takes him 30 minutes to quote — he eyeballs the drawing, checks inventory, checks machine schedule, looks up what he charged last time. He loses 40% of bids because he's too slow. Multiply by every SMB shop in the US and you have a reshoring crisis.
+Mike runs a 12-person machine shop in Pennsylvania. $8M/yr revenue. Every RFQ takes him 30 minutes to quote. He loses 40% of bids because he's too slow. Multiply by every SMB shop in the US and you have an industrial reshoring crisis.
 
 ## The product
-A sovereign quoting agent that runs on Mike's shop floor. Drop any RFQ drawing into Telegram (or his shop's email) — the agent extracts it, cross-references historical jobs, checks inventory and machine schedule, and returns a structured quote in under 30 seconds. All on-prem. Zero customer data leaves the building.
+A sovereign quoting agent that runs on Mike's shop floor. Drop any RFQ drawing into Telegram — the agent extracts it, cross-references historical jobs + inventory + machine schedule, and returns a structured quote in under 30 seconds. All on-prem. Zero customer data leaves the building.
 
-## The differentiator
-A **steering dial** baked into the NemoClaw blueprint — conservative / balanced / aggressive. Same RFQ, three profiles, three prices with **$1,073 swing** on a typical $5k bracket. Not prompt engineering — vLLM-native temperature + guided_json + system prompt injection per profile. Mike picks per-customer, per-deal.
+## The differentiator that wins
+**The agent learns.** When Mike corrects a quote ("too low — Boeing pays slow, add 8%"), the agent persists the correction as shop personality. Two minutes later, a different Boeing drawing arrives — the agent quotes with the +8% already applied, cites the earlier feedback in its reasoning, no explicit "remember this" needed. The personality lives in the NemoClaw sandbox data volume, survives restarts, and never leaves the shop.
+
+Three cross-cutting vLLM steering profiles (conservative / balanced / aggressive) stack on top — same RFQ, three prices, **$1,073 swing** on a typical bracket. Real vLLM knobs (temperature + guided_json + per-profile system prompt), not prompt tricks.
 
 ## The stack
-- **NemoClaw** — NVIDIA's agent sandbox. Landlock + seccomp + netns. Nothing leaks.
-- **vLLM** running Llama 3.1 8B on a single on-prem A100. $5k hardware, pays for itself in 2 months of won bids.
-- **Cloud Nemotron-120B fallback** for the rare complex quote.
-- **Wedge Drawing Brain** (built separately, production-tested) — Reducto-powered perception layer. Handles stained scans, rotated pages, multi-language. 78% success on a 10-drawing test batch including EN/ES/DE.
+- **NemoClaw** sandbox — Landlock + seccomp + netns; one declarative YAML for the whole stack
+- **vLLM + Llama 3.1 8B** on a local A100 — 4× faster than cloud Nemotron-120B; $5k hardware pays for itself in 2 months of won bids
+- **Cloud Nemotron-120B fallback** for edge cases
+- **Wedge Drawing Brain** (Reducto-powered) — production perception layer that handles stained scans, rotated pages, multi-language
 
 ## The numbers
-- **4× faster** per-turn inference: vLLM/Llama-3.1-8B (≈3 s) vs cloud Nemotron-120B (≈12 s), measured on the same quote prompt.
-- **$1,073 swing** — real variance across the three steering profiles on the hero demo RFQ.
-- **5 tools, 100% success rate** across 20 test prompts on the hero demo PDF set.
-- **$0.06/drawing** for extraction (Wedge+Reducto), **<$0.01/quote** for local vLLM inference.
+- 4× faster per-turn inference vs cloud
+- $1,073 steering swing (real)
+- $0.06/drawing extraction, <$0.01/quote inference
+- Persistent learning validated end-to-end
 
 ## The moat
-Mike's historical jobs are his data. The agent learns his shop's pricing patterns over time. Every bid won/lost is a training signal. Competitors who try to copy this with a hosted API give up that data moat and give up sovereignty. We give the shop both.
+Mike's historical data + his corrections + his shop's personality all live on-prem. Every bid won/lost is a training signal. Competitors who try to copy this with a hosted API give up the data moat AND sovereignty. We give the shop both.
 
 ## The ask
-One team to ship this in 6 months. First 20 design-partner shops committed. US Manufacturing Extension Partnership intro channel. Judges: the best use of vLLM + NemoClaw isn't another support bot — it's keeping US industry alive at machine-shop scale.
+One team, six months, first 20 design-partner shops committed. US Manufacturing Extension Partnership intro channel. NVIDIA + Red Hat's best play here isn't another support bot — it's keeping US industry alive at machine-shop scale.

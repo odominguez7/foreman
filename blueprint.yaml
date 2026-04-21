@@ -1,26 +1,19 @@
-# Wedge Agentic Edge — Track 5 Blueprint (HONEST)
+# Wedge Agentic Edge — Track 5 Blueprint (v2: with learning loop)
 # =============================================================================
-# Declarative config for a NemoClaw sandbox that runs a metal-fab quoting agent
-# against vLLM (primary) with cloud Nemotron as fallback for hard reasoning.
-#
-# The steering profiles below use REAL vLLM controls:
-#   - temperature (deterministic vs exploratory)
-#   - guided_json (schema-enforced structured output via Outlines)
-#   - max_tokens
-#   - system_prompt injection per profile
-# NOT a bash `if/else` — these are runtime model parameters vLLM exposes.
+# Sovereign RFQ quoting agent for SMB US machine shops. vLLM primary, cloud
+# Nemotron fallback. Runs entirely on-prem. Persistent shop personality across
+# sessions — the agent learns from every correction the shop owner makes.
 
 apiVersion: nemoclaw/v1
 kind: Blueprint
 metadata:
   name: wedge-agentic-edge
-  description: "Sovereign RFQ quoting agent for SMB US machine shops. vLLM primary, cloud Nemotron fallback. Runs entirely on-prem."
+  description: "Sovereign RFQ quoting agent for SMB US machine shops with persistent learning."
 
 inference:
   default_profile: vllm-balanced
 
   profiles:
-    # ---- vLLM (primary on Brev Tier-4 A100/H100) ----
     - name: vllm-balanced
       provider: openai-compatible
       endpoint: http://host.openshell.internal:8000/v1
@@ -28,35 +21,32 @@ inference:
       wire_api: chat_completions
       temperature: 0.3
       max_tokens: 2048
-      # vLLM-native structured output via Outlines
       guided_json: true
 
     - name: vllm-conservative
       provider: openai-compatible
       endpoint: http://host.openshell.internal:8000/v1
       model: meta-llama/Llama-3.1-8B-Instruct
-      temperature: 0.1             # tight, deterministic, fewer risky choices
+      temperature: 0.1
       max_tokens: 2048
       guided_json: true
       system_prompt_append: |
-        You are in CONSERVATIVE quoting mode. Apply a 15% margin cushion on every
-        price, add a 3-day lead-time buffer, and ALWAYS ask a clarifying question
-        when the drawing has any tight tolerance, mixed units, or unusual finish.
+        CONSERVATIVE quoting mode. +15% margin cushion, +3d lead buffer, always
+        ask a clarifying question on any tight tolerance, mixed units, or
+        unusual finish.
 
     - name: vllm-aggressive
       provider: openai-compatible
       endpoint: http://host.openshell.internal:8000/v1
       model: meta-llama/Llama-3.1-8B-Instruct
-      temperature: 0.4             # more exploratory, pattern-matches to loss data
+      temperature: 0.4
       max_tokens: 2048
       guided_json: true
       system_prompt_append: |
-        You are in AGGRESSIVE quoting mode. Undercut historical base pricing by
-        ~8% to win volume. Tighten lead times where slack allows. Never ask a
-        clarifying question — accept reasonable ambiguity. Cite the nearest
-        lost bid as the competitive benchmark.
+        AGGRESSIVE quoting mode. Undercut historical base ~8%, tighten leads
+        where slack allows, never ask clarifying questions, cite nearest lost
+        bid as the competitive benchmark.
 
-    # ---- Cloud fallback for complex multi-step reasoning ----
     - name: nvidia-cloud
       provider: nvidia
       endpoint: https://integrate.api.nvidia.com/v1
@@ -66,26 +56,41 @@ inference:
 
 network:
   allowed_hosts:
-    - host.openshell.internal      # local vLLM (primary)
-    - integrate.api.nvidia.com     # NVIDIA cloud (fallback)
+    - host.openshell.internal
+    - integrate.api.nvidia.com
   blocked_by_default: true
 
 filesystem:
   read_paths: [/sandbox, /workspace, /tmp, /models]
   write_paths: [/sandbox, /tmp]
 
+memory:
+  # Persistent shop personality — survives sandbox restarts via the NemoClaw data volume.
+  # Every correction the shop owner makes is appended here, retrieved on every subsequent quote.
+  personality_store: /sandbox/.openclaw-data/shop-memory/personality.jsonl
+
 agent:
   name: wedge-agent
   system_prompt: |
-    You are a quoting assistant for Acme Precision, a 12-person US metal-fab
-    machine shop. When a drawing arrives:
-      1. Call shop-extract-drawing with the filename
-      2. Call shop-retrieve-similar-jobs using the extracted material + customer
-      3. Call shop-check-material and shop-check-schedule in parallel
-      4. Call shop-compose-quote with the requested steering mode
-    Never fabricate pricing. If extraction looks uncertain, flag it in the
-    quote's `flags` field. If asked "why did we win/lose bid X", look up X in
-    the similar-jobs table and explain honestly.
+    You are the quoting assistant for Acme Precision, a 12-person US metal-fab
+    machine shop. Every RFQ you handle must follow this exact loop:
+
+      1. Call shop-extract-drawing with the filename.
+      2. Call shop-retrieve-similar-jobs with the extracted material + customer.
+      3. Call shop-check-material AND shop-check-schedule (parallel OK).
+      4. **ALWAYS call shop-recall-personality** with the customer + material +
+         part family BEFORE composing a quote. If the matches array is
+         non-empty, you MUST incorporate each feedback into the final quote's
+         reasoning, pricing, or lead time, and cite the feedback explicitly.
+      5. Call shop-compose-quote with the requested steering mode.
+
+    If the user responds to a quote with a correction, preference, or rule
+    ("too high", "add X%", "this customer always...", "never quote under $Y"),
+    **immediately** call shop-remember-feedback to persist it. Do not wait for
+    explicit "remember this" instruction. Corrections are training signals.
+    Confirm storage in your reply.
+
+    Never fabricate pricing. If extraction looks uncertain, flag it.
 
   tools:
     - name: shop-extract-drawing
@@ -98,6 +103,11 @@ agent:
       script: /sandbox/.openclaw-data/skills/shop-check-schedule/shop-check-schedule.sh
     - name: shop-compose-quote
       script: /sandbox/.openclaw-data/skills/shop-compose-quote/shop-compose-quote.sh
+    # Learning loop
+    - name: shop-remember-feedback
+      script: /sandbox/.openclaw-data/skills/shop-remember-feedback/shop-remember-feedback.sh
+    - name: shop-recall-personality
+      script: /sandbox/.openclaw-data/skills/shop-recall-personality/shop-recall-personality.sh
 
 channels:
   telegram:
