@@ -1,0 +1,105 @@
+# Wedge Agentic Edge — Track 5 Blueprint (HONEST)
+# =============================================================================
+# Declarative config for a NemoClaw sandbox that runs a metal-fab quoting agent
+# against vLLM (primary) with cloud Nemotron as fallback for hard reasoning.
+#
+# The steering profiles below use REAL vLLM controls:
+#   - temperature (deterministic vs exploratory)
+#   - guided_json (schema-enforced structured output via Outlines)
+#   - max_tokens
+#   - system_prompt injection per profile
+# NOT a bash `if/else` — these are runtime model parameters vLLM exposes.
+
+apiVersion: nemoclaw/v1
+kind: Blueprint
+metadata:
+  name: wedge-agentic-edge
+  description: "Sovereign RFQ quoting agent for SMB US machine shops. vLLM primary, cloud Nemotron fallback. Runs entirely on-prem."
+
+inference:
+  default_profile: vllm-balanced
+
+  profiles:
+    # ---- vLLM (primary on Brev Tier-4 A100/H100) ----
+    - name: vllm-balanced
+      provider: openai-compatible
+      endpoint: http://host.openshell.internal:8000/v1
+      model: meta-llama/Llama-3.1-8B-Instruct
+      wire_api: chat_completions
+      temperature: 0.3
+      max_tokens: 2048
+      # vLLM-native structured output via Outlines
+      guided_json: true
+
+    - name: vllm-conservative
+      provider: openai-compatible
+      endpoint: http://host.openshell.internal:8000/v1
+      model: meta-llama/Llama-3.1-8B-Instruct
+      temperature: 0.1             # tight, deterministic, fewer risky choices
+      max_tokens: 2048
+      guided_json: true
+      system_prompt_append: |
+        You are in CONSERVATIVE quoting mode. Apply a 15% margin cushion on every
+        price, add a 3-day lead-time buffer, and ALWAYS ask a clarifying question
+        when the drawing has any tight tolerance, mixed units, or unusual finish.
+
+    - name: vllm-aggressive
+      provider: openai-compatible
+      endpoint: http://host.openshell.internal:8000/v1
+      model: meta-llama/Llama-3.1-8B-Instruct
+      temperature: 0.4             # more exploratory, pattern-matches to loss data
+      max_tokens: 2048
+      guided_json: true
+      system_prompt_append: |
+        You are in AGGRESSIVE quoting mode. Undercut historical base pricing by
+        ~8% to win volume. Tighten lead times where slack allows. Never ask a
+        clarifying question — accept reasonable ambiguity. Cite the nearest
+        lost bid as the competitive benchmark.
+
+    # ---- Cloud fallback for complex multi-step reasoning ----
+    - name: nvidia-cloud
+      provider: nvidia
+      endpoint: https://integrate.api.nvidia.com/v1
+      model: nvidia/nemotron-3-super-120b
+      temperature: 0.2
+      max_tokens: 4096
+
+network:
+  allowed_hosts:
+    - host.openshell.internal      # local vLLM (primary)
+    - integrate.api.nvidia.com     # NVIDIA cloud (fallback)
+  blocked_by_default: true
+
+filesystem:
+  read_paths: [/sandbox, /workspace, /tmp, /models]
+  write_paths: [/sandbox, /tmp]
+
+agent:
+  name: wedge-agent
+  system_prompt: |
+    You are a quoting assistant for Acme Precision, a 12-person US metal-fab
+    machine shop. When a drawing arrives:
+      1. Call shop-extract-drawing with the filename
+      2. Call shop-retrieve-similar-jobs using the extracted material + customer
+      3. Call shop-check-material and shop-check-schedule in parallel
+      4. Call shop-compose-quote with the requested steering mode
+    Never fabricate pricing. If extraction looks uncertain, flag it in the
+    quote's `flags` field. If asked "why did we win/lose bid X", look up X in
+    the similar-jobs table and explain honestly.
+
+  tools:
+    - name: shop-extract-drawing
+      script: /sandbox/.openclaw-data/skills/shop-extract-drawing/shop-extract-drawing.sh
+    - name: shop-retrieve-similar-jobs
+      script: /sandbox/.openclaw-data/skills/shop-retrieve-similar-jobs/shop-retrieve-similar-jobs.sh
+    - name: shop-check-material
+      script: /sandbox/.openclaw-data/skills/shop-check-material/shop-check-material.sh
+    - name: shop-check-schedule
+      script: /sandbox/.openclaw-data/skills/shop-check-schedule/shop-check-schedule.sh
+    - name: shop-compose-quote
+      script: /sandbox/.openclaw-data/skills/shop-compose-quote/shop-compose-quote.sh
+
+channels:
+  telegram:
+    enabled: true
+    bot_token_env: TELEGRAM_BOT_TOKEN
