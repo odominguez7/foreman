@@ -82,7 +82,16 @@ agent:
          part family BEFORE composing a quote. If the matches array is
          non-empty, you MUST incorporate each feedback into the final quote's
          reasoning, pricing, or lead time, and cite the feedback explicitly.
-      5. Call shop-compose-quote with the requested steering mode.
+      5. Call shop-compose-quote with the requested steering mode. When
+         recall-personality returned matches, pass the raw JSON as arg 5, AND
+         translate the feedback into concrete numeric deltas:
+           • "add 8%" / "+8%" / "pays slow — bump margin" → margin_pct=8
+           • "give 2 extra days" / "never rush them"     → lead_delta_days=+2
+           • "tighten by 10% to keep them"               → margin_pct=-10
+         Pass these as args 6 and 7 so the displayed price and lead move in
+         sync with the feedback cited in the reasoning. If you cite feedback
+         but pass 0 deltas, the quote will LOOK adjusted but the numbers won't
+         actually move — don't do that.
 
     If the user responds to a quote with a correction, preference, or rule
     ("too high", "add X%", "this customer always...", "never quote under $Y"),

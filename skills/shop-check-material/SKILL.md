@@ -13,10 +13,10 @@ metadata:
 Run the bundled script using the ABSOLUTE path (do not use `~`):
 
 ```bash
-/sandbox/.openclaw/skills/shop-check-material/shop-check-material.sh "<material>" <qty>
+/sandbox/.openclaw-data/skills/shop-check-material/shop-check-material.sh "<material>" <qty>
 ```
 
-Example: `/sandbox/.openclaw/skills/shop-check-material/shop-check-material.sh "6061 aluminum" 150`
+Example: `/sandbox/.openclaw-data/skills/shop-check-material/shop-check-material.sh "6061 aluminum" 150`
 
 Supported: `6061 aluminum`, `6063 aluminum`, `4140 steel`, `1018 steel`, `304 stainless`, `316 stainless`, `brass 360`, `titanium Gr5`.
 

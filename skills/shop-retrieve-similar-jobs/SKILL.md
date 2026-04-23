@@ -11,10 +11,10 @@ metadata:
 ## Usage
 
 ```bash
-/sandbox/.openclaw/skills/shop-retrieve-similar-jobs/shop-retrieve-similar-jobs.sh "<material>" "<customer>"
+/sandbox/.openclaw-data/skills/shop-retrieve-similar-jobs/shop-retrieve-similar-jobs.sh "<material>" "<customer>"
 ```
 
-Example: `/sandbox/.openclaw/skills/shop-retrieve-similar-jobs/shop-retrieve-similar-jobs.sh "6061 aluminum" "Boeing T2"`
+Example: `/sandbox/.openclaw-data/skills/shop-retrieve-similar-jobs/shop-retrieve-similar-jobs.sh "6061 aluminum" "Boeing T2"`
 
 ## Top matches for Boeing T2 + 6061 aluminum (inline fallback)
 

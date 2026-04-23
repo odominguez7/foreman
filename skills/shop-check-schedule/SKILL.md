@@ -11,10 +11,10 @@ metadata:
 ## Usage
 
 ```bash
-/sandbox/.openclaw/skills/shop-check-schedule/shop-check-schedule.sh <machine> <requested_hours>
+/sandbox/.openclaw-data/skills/shop-check-schedule/shop-check-schedule.sh <machine> <requested_hours>
 ```
 
-Example: `/sandbox/.openclaw/skills/shop-check-schedule/shop-check-schedule.sh mill 4`
+Example: `/sandbox/.openclaw-data/skills/shop-check-schedule/shop-check-schedule.sh mill 4`
 
 ## Schedule (inline fallback — as of 2026-04-25)
 

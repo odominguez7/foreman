@@ -35,9 +35,10 @@ bash /workspace/demo/nemoclaw-agent/setup.sh
 # Onboard with OUR blueprint (not the default customer_support one)
 nemoclaw onboard --blueprint ./blueprint.yaml
 
-# Copy our 5 skills into the sandbox
+# Copy our 7 skills into the sandbox (5 quoting + 2 learning-loop)
 for s in shop-extract-drawing shop-check-material shop-check-schedule \
-         shop-retrieve-similar-jobs shop-compose-quote; do
+         shop-retrieve-similar-jobs shop-compose-quote \
+         shop-remember-feedback shop-recall-personality; do
   nemoclaw wedge-agent skill install ./skills/$s
 done
 

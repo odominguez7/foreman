@@ -8,7 +8,7 @@ cat <<'JSON'
 JSON
 elif [[ "$mat" == *"1018"* ]]; then
 cat <<'JSON'
-{"query_features":"1018 steel shaft, qty ~500","matches":[{"job_id":"3267","customer":"Honda HON-TX","part":"Shaft adapter","qty":500,"quoted_price":7500,"actual_hours":48,"material":"1018 steel","won":true,"date":"2025-10-11"},{"job_id":"3488","customer":"Stellantis","part":"Engine cover plate","qty":200,"quoted_price":5400,"actual_hours":39,"material":"1018 steel","won":true,"date":"2026-03-22"},{"job_id":"3215","customer":"Boeing T2","part":"Part 82-Beta bracket","qty":100,"quoted_price":3200,"actual_hours":20,"material":"6061 aluminum","won":true,"date":"2025-09-02"}]}
+{"query_features":"1018 steel shaft, qty ~500","matches":[{"job_id":"3267","customer":"Honda HON-TX","part":"Shaft adapter","qty":500,"quoted_price":7500,"actual_hours":48,"material":"1018 steel","won":true,"date":"2025-10-11"},{"job_id":"3488","customer":"Stellantis","part":"Engine cover plate","qty":200,"quoted_price":5400,"actual_hours":39,"material":"1018 steel","won":true,"date":"2026-03-22"},{"job_id":"3402","customer":"Cummins","part":"Piston pin","qty":400,"quoted_price":5200,"actual_hours":32,"material":"1018 steel","won":true,"date":"2026-01-18"}]}
 JSON
 else
 cat <<'JSON'
