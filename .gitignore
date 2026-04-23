@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# Node
+node_modules/
+.next/
+dist/
+build/
+.parcel-cache/
+*.log
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+.cursor/
+
+# OS
+.DS_Store
+Thumbs.db
+*.bak
+
+# Local secrets / env
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Foreman runtime artifacts
+/sandbox/
+personality.jsonl
+shop-memory/
+*.brev
+brev-token.txt
+hf_token.txt
+
+# Vercel / Netlify scratch
+.vercel/
+.netlify/
