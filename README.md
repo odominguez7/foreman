@@ -314,7 +314,7 @@ For graders and classmates landing here from the assignment.
 |---|---|
 | Open-source repo with strong README (setup, usage, architecture, limitations) | This file + the rest of the repo |
 | Deployed website / docs page | [foremanjobs.lovable.app](https://foremanjobs.lovable.app/) |
-| Optional white paper | [`docs/whitepaper/foreman-whitepaper.md`](./docs/whitepaper/foreman-whitepaper.md) |
+| Optional white paper | [PDF](./docs/whitepaper/foreman-whitepaper.pdf) · [Markdown source](./docs/whitepaper/foreman-whitepaper.md) |
 | Lightweight launch (X / LinkedIn / Reddit) | Post drafts in [`docs/launch/`](./docs/launch/) — see the per-platform README there |
 | Confidential peer-test feedback | Template at [`docs/peer-test-template.md`](./docs/peer-test-template.md), filled-in version submitted to staff confidentially |
 
