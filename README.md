@@ -4,6 +4,8 @@
 
 Built for MIT AI Studio (MAS.664) as an open-source release.
 
+🌐 **Live site:** [foremanjobs.lovable.app](https://foremanjobs.lovable.app/)
+
 **Status:** working demo. 7 skills wired, 3 steering profiles, persistent learning loop, 5 real and synthetic demo drawings (including one Spanish-language Bosch punch tool in tool steel).
 
 ---
