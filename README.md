@@ -1,92 +1,226 @@
-# Wedge Agentic Edge
+# Foreman
 
-> **Sovereign industrial AI — a vLLM-powered quoting agent for US SMB metal-fab shops that LEARNS.**
-> Seven tools. One blueprint. NemoClaw sandbox. Runs on-prem. Every correction Mike makes becomes permanent shop personality, retrieved automatically on every future quote.
->
-> **Track 5 — NVIDIA GPU Prize** · Red Hat + NVIDIA vLLM Hackathon 2026.
+> A quoting hand for small and mid-size US machine shops. Reads the drawing, checks the schedule, writes the quote, remembers what you tell it. Runs on a computer in your shop; your drawings never leave the building.
 
-## What makes this different
+Built for MIT AI Studio (MAS.664) as an open-source release.
 
-Most agentic demos show the agent executing a task. We show the agent **learning from its user in real time and remembering across quotes.** That's the difference between "agentic" as buzzword and "agentic" as production behavior.
+**Status:** working demo. 7 skills wired, 3 steering profiles, persistent learning loop, 5 real and synthetic demo drawings (including one Spanish-language Bosch punch tool in tool steel).
 
-### The learning loop (the hero feature)
+---
 
-1. Mike: *"Quote this Boeing bracket, 150 pcs, balanced."*
-2. Agent quotes $31/unit.
-3. Mike: *"Too low. Boeing always pays slow — add 8%."*
-4. Agent persists the correction to `/sandbox/.openclaw-data/shop-memory/personality.jsonl` — no explicit "remember this" needed.
-5. Two minutes later: a different Boeing drawing arrives.
-6. Agent quotes with the +8% already applied, **citing the earlier feedback in its reasoning**.
-7. The personality survives sandbox restarts, lives only on Mike's shop floor.
+## Why Foreman exists
 
-This is the product. Everything else is scaffolding.
+A $10M US machine shop quotes 80 to 120 RFQs per week. Each quote takes the best estimator (usually the owner) 30 to 90 minutes. Shops lose 30 to 50 percent of bids because they cannot respond fast enough. If a shop answered 20 percent more RFQs at the same close rate, that is 20 percent more revenue, directly.
 
-## The steering dial (differentiator #2)
+Existing tools either target enterprise shops (Paperless Parts, Xometry Toolbox) or are generic spreadsheet calculators. Nothing in this segment learns from the owner the way a human foreman does.
 
-Same RFQ run through three vLLM profiles produces three visibly different quotes:
+Foreman is the tool I wish existed. It does what an experienced foreman does, every day, for every RFQ. And it remembers every correction the owner makes.
 
-| Profile | Temp | System prompt append | $/unit | Total | Lead | Clarifying Q |
-|---|---|---|---:|---:|---:|---|
-| `vllm-conservative` | 0.1 | +15% margin, +3d buffer, always ask | $35.65 | $5,348 | 10 d | Yes |
-| `vllm-balanced` (default) | 0.3 | — | $31.00 | $4,650 | 7 d | No |
-| `vllm-aggressive` | 0.4 | –8% margin, tighter lead, cite lost bid | $28.50 | $4,275 | 5 d | No |
+---
 
-Each stacks with learned personality. Mike flips `default_profile:` in YAML to change the whole shop's default mood.
+## What it does (the 90 second version)
 
-## The stack
+1. **Extracts** structured fields from a drawing PDF (material, tolerances, features, finish), even for Spanish-language or old scanned drawings. Reducto handles the perception.
+2. **Retrieves** the shop's three most similar past jobs (won and lost), with actual hours and quoted prices.
+3. **Checks** raw-material inventory and machine schedule slack in parallel.
+4. **Recalls** any prior feedback the owner has given for this customer + material + part family.
+5. **Composes** a draft quote under one of three steering profiles (careful, normal, aggressive), with the neutral-vs-adjusted math shown in the reasoning field.
+6. **Remembers** every correction the owner makes ("Boeing pays slow, add 8 percent") and applies it automatically to the next matching RFQ.
 
-- **[NemoClaw](https://github.com/NVIDIA/NemoClaw)** — NVIDIA's open-source agent sandbox. Landlock + seccomp + netns. One declarative `blueprint.yaml` for the whole stack.
-- **vLLM** — Llama 3.1 8B Instruct on a local A100 (Brev Tier 4). OpenAI-compatible endpoint. `guided_json` for schema-enforced tool output.
-- **Cloud Nemotron-3-Super-120B** — fallback profile for complex quotes the 8B model punts on.
-- **[Wedge Drawing Brain](../wedge-drawing-brain/)** — production Reducto-backed perception layer for arbitrary customer drawings.
-- **Persistent shop personality** — JSONL in the sandbox data volume, customer-gated exact-match retrieval, upgrade path to embeddings.
+The last step is the product. Everything else is scaffolding for it.
+
+---
+
+## Architecture
+
+```
+  ┌─────────────────────────────────────────────────────────────┐
+  │                    NemoClaw Sandbox                         │
+  │                    (Landlock + seccomp + netns)             │
+  │                                                             │
+  │  ┌───────────┐     ┌─────────────────────────────────┐      │
+  │  │ Owner     │────▶│ Foreman Agent                   │      │
+  │  │ (Telegram │     │ Llama 3.1 8B on vLLM, guided    │      │
+  │  │  or CLI)  │     │ JSON, 3 steering profiles       │      │
+  │  └───────────┘     └──────┬──────────────────────────┘      │
+  │                           │ tool calls                      │
+  │        ┌──────────────────┴────────────────────┐            │
+  │        ▼                                       ▼            │
+  │  ┌─────────────────┐                   ┌─────────────────┐  │
+  │  │ Quoting loop    │                   │ Learning loop   │  │
+  │  │ (5 skills)      │                   │ (2 skills)      │  │
+  │  │                 │                   │                 │  │
+  │  │ extract-drawing │                   │ remember-       │  │
+  │  │ retrieve-       │                   │   feedback ────┐│  │
+  │  │   similar-jobs  │◀──────uses──── recall-            ││  │
+  │  │ check-material  │                   │   personality  ││  │
+  │  │ check-schedule  │                                   ▼│  │
+  │  │ compose-quote ◀─────────reads personality────────────┘  │
+  │  └─────────────────┘                  personality.jsonl    │
+  │                                       (persistent volume)   │
+  └─────────────────────────────────────────────────────────────┘
+```
+
+A single declarative `blueprint.yaml` defines: three vLLM profiles, network allowlist (host.openshell.internal, integrate.api.nvidia.com), read/write filesystem scopes, personality-store location, agent system prompt, and the tool registry. Swap runtimes, swap profiles, swap the inference backend without touching the skills.
+
+---
 
 ## The seven skills
 
 | Skill | Purpose |
 |---|---|
-| `shop-extract-drawing` | Parse drawing → structured schema (material, dims, threads, complexity) |
-| `shop-retrieve-similar-jobs` | Top-3 historical jobs (won/lost status) |
-| `shop-check-material` | Inventory + supplier lead time |
-| `shop-check-schedule` | Machine availability + slack |
-| `shop-compose-quote` | Final quote with steering bias |
-| **`shop-remember-feedback`** | 🧠 Persist a correction to shop personality |
-| **`shop-recall-personality`** | 🧠 Retrieve relevant past feedback before every quote |
+| `shop-extract-drawing` | Drawing PDF → structured schema. Three tiers: cached demo fast path, pre-staged Reducto sidecar, pdfplumber local fallback. |
+| `shop-retrieve-similar-jobs` | Top-3 historical jobs for a material + customer, including at least one loss for benchmark pricing. |
+| `shop-check-material` | Raw-material inventory and supplier lead time. |
+| `shop-check-schedule` | Machine slack and earliest available slot. |
+| `shop-compose-quote` | Final quote under one of three steering profiles; accepts an optional `personality_json` and agent-supplied `margin_pct` / `lead_delta_days` derived from recalled feedback. |
+| `shop-remember-feedback` | Persists a correction to `personality.jsonl` in the sandbox data volume. |
+| `shop-recall-personality` | Customer-gated retrieval over the personality store; called before every compose. |
 
-## Measured
-
-- **≈4× latency win**: vLLM/Llama-3.1-8B ≈3.1 s/turn vs cloud Nemotron-120B ≈12.8 s/turn (same prompts)
-- **$1,073 steering swing** on the hero demo (150-pc Boeing bracket, conservative vs aggressive)
-- **$0.06/drawing** Reducto extraction · **<$0.01/quote** vLLM inference
-- **Learning loop validated end-to-end** in sandbox: feedback stored, retrieved on cross-part-family query, excluded for different customer
-
-## Quick start (Brev Tier-4)
-
-```bash
-bash /workspace/start_vllm_server.sh                   # vLLM up with Llama 3.1 8B
-bash /workspace/demo/nemoclaw-agent/setup.sh           # NemoClaw
-nemoclaw onboard --blueprint ./blueprint.yaml          # all 7 tools + 3 profiles + memory
-for s in skills/*; do nemoclaw wedge-agent skill install "$s"; done
-cp -r demo-data/inbound/* /sandbox/.openclaw-data/media/inbound/
-nemoclaw wedge-agent connect
-openclaw agent --agent main -m "Quote bosch-punzon.pdf for 200 pieces balanced"
-```
-
-## Why this wins
-
-1. **Real industry** — SMB metal fab, not another support bot. Every other team's demo ends at "chatbot"; ours ends at "learning digital twin of a physical business."
-2. **Measurable technical edge** — 4× latency, persistent memory, real vLLM steering controls (not bash if/else).
-3. **Sovereign by design** — Landlock + seccomp + netns; zero customer data leaves the shop; personality is the shop's moat, not the hosted-API vendor's.
-4. **Sponsor alignment** — NVIDIA (vLLM + NemoClaw stack), Red Hat (open source + sovereignty), both (US manufacturing reshoring).
-
-## Roadmap
-
-- Swap customer+material exact match → sentence-transformer embeddings for soft retrieval
-- Replace mock historical-jobs table with live ERP integration (QuickBooks / ShopVue)
-- Fine-tune Llama 3.1 8B with LoRA on per-shop feedback data (personality becomes weights, not just retrievals)
-- Voice channel via Twilio — phone-based RFQs
-- Multi-agent: sales-facing vs shop-floor with approval handoff
+Each skill is a `SKILL.md` + a bash (or bash + python) runner. The `SKILL.md` uses absolute paths under `/sandbox/.openclaw-data/skills/...` and embeds an inline JSON fallback so the agent can answer from the documentation even if the script fails.
 
 ---
 
-Built by [Omar Dominguez](https://github.com/odominguez7) · MIT · Contributions welcome
+## Steering profiles
+
+Same drawing, same customer, same quantity, three visibly different quotes. Measured on the hero demo (150-pc Boeing 82-Alpha bracket, 6061 aluminum):
+
+| Profile | Temp | System prompt append | $/unit | Total | Lead | Clarifying Q |
+|---|---|---|---:|---:|---:|---|
+| **Careful** (conservative) | 0.1 | +15% margin, +3d buffer, always ask | $35.65 | $5,348 | 10 d | Yes |
+| **Normal** (balanced, default) | 0.3 | — | $31.00 | $4,650 | 7 d | No |
+| **Aggressive** | 0.4 | –8% margin, tighter lead, cite lost bid | $28.52 | $4,278 | 5 d | No |
+
+Swing of $1,070 on a single RFQ. The profile is set in `blueprint.yaml` and can be flipped by the owner at any time. Steering stacks on top of learned personality (margin and lead adjustments from stored feedback apply on top of the steering-chosen base).
+
+---
+
+## Quick start
+
+**You need:**
+- A Linux box with NVIDIA GPU (A10 or better, 24 GB VRAM minimum for Llama 3.1 8B at fp16)
+- CUDA 12.1+, Python 3.10+
+- `git`, `bash`, Node.js 20+ (for NemoClaw CLI)
+- Docker or Podman
+
+**Step 1. Clone and install dependencies.**
+
+```bash
+git clone https://github.com/odominguez7/wedge-agentic-edge.git foreman
+cd foreman
+
+# vLLM venv for inference server
+python3 -m venv /opt/vllm-venv
+/opt/vllm-venv/bin/pip install vllm==0.6.3 huggingface_hub
+
+# NemoClaw CLI
+npm install -g @nvidia/nemoclaw-cli
+```
+
+**Step 2. Start the inference server.**
+
+```bash
+export HF_TOKEN=hf_your_token_here  # get one at https://huggingface.co/settings/tokens
+/opt/vllm-venv/bin/python -m vllm.entrypoints.openai.api_server \
+  --model meta-llama/Llama-3.1-8B-Instruct \
+  --host 0.0.0.0 --port 8000 \
+  --dtype float16 --max-model-len 4096 \
+  --enable-auto-tool-choice --tool-call-parser llama3_json
+```
+
+**Step 3. Onboard the NemoClaw sandbox.**
+
+```bash
+nemoclaw onboard --blueprint ./blueprint.yaml
+for s in skills/shop-*; do
+  nemoclaw foreman-agent skill install "$s"
+done
+cp -r demo-data/inbound/* /sandbox/.openclaw-data/media/inbound/
+```
+
+**Step 4. Run a quote.**
+
+```bash
+nemoclaw foreman-agent connect
+openclaw agent --agent main \
+  -m "Quote demo_1.pdf for Boeing, 150 pieces, normal mode"
+```
+
+Expected: $31/unit, $4,650, 7 days, confidence 0.9.
+
+**Step 5. Try the learning loop.**
+
+```bash
+# Tell Foreman something
+openclaw agent --agent main \
+  -m "That quote is too low. Boeing always pays slow, add 8 percent."
+
+# Later, a different Boeing 6061 job
+openclaw agent --agent main \
+  -m "Quote demo_3.pdf for Boeing, 80 pieces, normal mode"
+# Expect: +8% pre-applied, feedback cited in the reasoning field,
+# neutral base ($63.75/u) shown next to adjusted price ($68.85/u)
+```
+
+---
+
+## Repository layout
+
+```
+foreman/
+├── blueprint.yaml              # NemoClaw blueprint (profiles, network, memory, agent, tools)
+├── skills/                     # 7 agent skills
+│   ├── shop-extract-drawing/
+│   ├── shop-retrieve-similar-jobs/
+│   ├── shop-check-material/
+│   ├── shop-check-schedule/
+│   ├── shop-compose-quote/
+│   ├── shop-remember-feedback/
+│   └── shop-recall-personality/
+├── demo-data/inbound/          # 5 demo PDFs + Reducto sidecars
+├── website/copy.md             # Site copy for the public docs page
+├── docs/
+│   ├── DEMO_SCRIPT.md          # 5-minute live demo walkthrough
+│   └── SATURDAY_PLAYBOOK.md    # Hour-by-hour bring-up playbook
+└── README.md
+```
+
+---
+
+## Limitations
+
+Honest list. Foreman is a course project, not a production system.
+
+- **Historical job data is synthetic.** `shop-retrieve-similar-jobs` returns a small hardcoded set (roughly 8 jobs across 6061, 1018, and 304 stainless). A real deployment wires this to the shop's ERP (ProShop, JobBOSS, E2, Global Shop, Fulcrum) via SQL or ODBC.
+- **Inventory and schedule are synthetic.** `shop-check-material` and `shop-check-schedule` return fixed mock data. Production deployments pull from live systems.
+- **Drawing extraction has two quality tiers.** Real drawings go through a pre-staged Reducto sidecar (accurate but pre-computed for the demo PDFs). Unknown drawings fall back to pdfplumber and agent reasoning, which is lower quality. A production build wires `shop-extract-drawing` directly to the Reducto API.
+- **Personality retrieval is exact-match.** Customer name must match exactly. Real deployment would use sentence-transformer embeddings so "Boeing T2" matches "Boeing Tier 2 Supplier" and "Boeing, Inc."
+- **No authentication, no audit trail.** The sandbox is single-user. A real shop would wire owner login and an append-only audit of every quote sent.
+- **Language support.** Tested on English and Spanish drawings. German and Japanese not tested.
+- **Scale.** Designed for one shop at a time, 80 to 120 quotes per week. Not built for multi-tenant SaaS.
+- **The 4x vLLM-vs-cloud latency claim** (previously published) was a target, not a measurement. Latency depends heavily on GPU choice; we will publish real numbers once Foreman runs on a stable deployment target.
+
+---
+
+## Roadmap
+
+- Swap exact-match personality retrieval for sentence-transformer embeddings.
+- Replace synthetic historical-jobs table with live ERP integration (ProShop or JobBOSS first).
+- Fine-tune Llama 3.1 8B with LoRA on per-shop feedback (personality becomes weights, not just retrievals).
+- Voice channel via Twilio; phone-based RFQs.
+- Multi-agent: sales-facing vs shop-floor with approval handoff.
+- Simple web UI for shop owners who prefer not to text.
+
+---
+
+## License
+
+MIT. See [LICENSE](./LICENSE).
+
+---
+
+## Contact
+
+Omar Dominguez · MIT · omar.dominguez7@gmail.com · [github.com/odominguez7](https://github.com/odominguez7)
+
+If you run a shop and want to see Foreman quote one of your own drawings live, write to the email above. We will set up a 20-minute demo.
