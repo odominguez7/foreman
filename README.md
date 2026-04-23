@@ -26,6 +26,40 @@ I spent eleven years running the CNC shop my father built. Every other quoting t
 
 ---
 
+## The bigger vision · Palantir for US manufacturing
+
+Quoting is the wedge, not the product.
+
+Palantir did one thing brilliantly: they built an integration and ontology layer for a high-trust, under-digitized institution (the US intelligence community), by starting with a narrow operational use case (counter-terror link analysis) and earning the right to become the operational backbone. The moat is not the AI. The moat is the accumulated ontology and the sovereignty they promised from day one.
+
+US small and mid-size manufacturing is the same shape of problem. Roughly 600,000 shops. $150B+ in annual domestic revenue. Foundational to national security. Barely digitized. Deep trust required. No integration layer exists. Foreman starts with quoting because quoting is the universal pain and the narrowest provable use case, but quoting earns the right to a six-layer arc.
+
+| Layer | What | When | Moat |
+|---|---|---|---|
+| **1. Quoting agent** | One shop, 7 skills, per-shop learning loop. Runs on a computer in the shop. | **Today** | Per-shop personality; near-zero churn on a perpetual-license architecture |
+| **2. Shop OS** | Foreman expands into scheduling, procurement, capacity planning, pricing strategy, customer relationship. Every white-collar workflow becomes an agent skill. | 2027 | Operational entrenchment |
+| **3. MCP protocol** | Foreman exposes every skill as an MCP tool. External agents (Salesforce, SolidWorks plugins, ERP add-ons, other shops' agents) call Foreman to read or write the shop's operational state. Per-call revenue. | 2027-28 | Integration count compounds; ecosystem lock-in |
+| **4. Per-shop ontology** | Each shop's graph (customers, materials, jobs, capabilities, quirks, won/lost patterns) is queryable. The Foundry parallel. | 2028 | Graph richness; exit cost becomes high |
+| **5. Sovereign shop network** | Opt-in benchmarking ("shops like you priced this at X") and excess-capacity marketplace. Shops never share raw data, only protocol-level signals. | 2029 | Marketplace network effects; Foreman is the protocol every shop speaks |
+| **6. Ontology layer for US industrial base** | With permission, de-identified drawings × quotes × outcomes become a training corpus. Foreman's graph joins suppliers, freight, insurance, OEM sourcing. Government, sovereign wealth, large OEMs become customers. | 2030+ | The legibility layer for US manufacturing. Defense reshoring needs this; China has it via State Grid, the US does not. |
+
+### What today's architecture protects
+
+Three choices already made in the current code keep this vision alive instead of foreclosing it:
+
+1. **On-prem, open source, MIT license.** Cannot become an ontology layer for sovereignty-obsessed buyers with a hosted SaaS. Day-one architecture is day-one credibility for Layer 6.
+2. **Per-call Extras already in the pricing model.** Voice channel, ERP / CAD plugin connection, expert review. That is Layer 3 revenue in disguise, already on the website.
+3. **The learning loop as a first-class primitive.** The personality store is the beginning of the per-shop ontology (Layer 4).
+
+### What NOT to do
+
+- Do not go multi-tenant SaaS. It forecloses Layers 4 through 6.
+- Do not make the data network opt-out. The moat is sovereignty; networks form only because shops trust they can walk away with their data intact.
+- Do not try to be a full ERP. Win by sitting on top of the ERP.
+- Do not sell to big shops first. Palantir did not start with the Pentagon. The first 10 shops should be desperate owners at $8M-$18M revenue, not GE Aerospace.
+
+---
+
 ## What it does
 
 1. **Extracts** structured fields from a drawing PDF: material, tolerances, features, finish, thread callouts. Works on Spanish-language drawings, mixed imperial/metric, and aged scanned drawings. Reducto handles perception; the agent reasons over the structured output.
