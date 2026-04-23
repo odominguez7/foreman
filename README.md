@@ -240,7 +240,10 @@ foreman/
 ├── demo-data/inbound/          # 5 demo PDFs + Reducto sidecars
 ├── docs/
 │   ├── DEMO_SCRIPT.md          # 5-minute live demo walkthrough
-│   └── SATURDAY_PLAYBOOK.md    # Hour-by-hour bring-up playbook
+│   ├── SATURDAY_PLAYBOOK.md    # Hour-by-hour bring-up playbook
+│   ├── peer-test-template.md   # HW9 peer-test feedback form
+│   ├── launch/                 # HW9 launch posts (X / LinkedIn / Reddit)
+│   └── whitepaper/             # HW9 optional white paper
 ├── website/                    # Marketing site (HTML + JSX, no build step)
 │   ├── index.html
 │   ├── src/                    # React via Babel-standalone
@@ -266,6 +269,20 @@ This is a course project and a working demo, not production software. The honest
 - **Language support is partial.** Tested on English and Spanish drawings. German and Japanese have not been tested.
 - **Designed for one shop at a time.** 80 to 120 quotes per week, single owner, single sandbox. Not multi-tenant SaaS.
 - **Latency claims are targets.** A previously published "4× vLLM-versus-cloud" number was an aspiration, not a measurement. Real numbers depend heavily on GPU choice; we will publish measured benchmarks once Foreman runs on a stable deployment target.
+
+---
+
+## Course deliverables (MIT AI Studio · MAS.664 · HW9)
+
+For graders and classmates landing here from the assignment.
+
+| Deliverable | Where |
+|---|---|
+| Open-source repo with strong README (setup, usage, architecture, limitations) | This file + the rest of the repo |
+| Deployed website / docs page | [foremanjobs.lovable.app](https://foremanjobs.lovable.app/) |
+| Optional white paper | [`docs/whitepaper/foreman-whitepaper.md`](./docs/whitepaper/foreman-whitepaper.md) |
+| Lightweight launch (X / LinkedIn / Reddit) | Post drafts in [`docs/launch/`](./docs/launch/) — see the per-platform README there |
+| Confidential peer-test feedback | Template at [`docs/peer-test-template.md`](./docs/peer-test-template.md), filled-in version submitted to staff confidentially |
 
 ---
 
